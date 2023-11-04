@@ -7,4 +7,5 @@ It works by creating a main HTML5 canvas element set to the size of the screen t
 ## Caveats
 This doesn't work (so far) on:
  - GNOME
- - Firefox/Safari
+ - Firefox (at stock settings, `about:config` settings required)
+ - Safari

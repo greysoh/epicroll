@@ -50,10 +50,26 @@ async function init() {
   canvas.width = screen.width;
   canvas.height = screen.height;
 
-  document.body.appendChild(canvas);
+  let isRunningAnimFrameDemo = false;
+  let intervalRenderBusyTime = 0;
+  let waitTimeUntilNextFrame = 2;
+
+  if (window.location.search) {
+    const searchParamsParsed = window.location.search.replace("?", "");
+    const searchParams = new URLSearchParams(searchParamsParsed);
+
+    if (searchParams.has("debugShowCanvas")) document.body.appendChild(canvas);
+    if (searchParams.has("use3DDemo")) isRunningAnimFrameDemo = true;
+
+    const requestedInterval = searchParams.get("intervalRenderBusyTime");
+    const requestedWaitTime = searchParams.get("waitTimeUntilNextFrame");
+
+    if (requestedInterval) intervalRenderBusyTime = parseInt(requestedInterval);
+    if (requestedWaitTime) waitTimeUntilNextFrame = parseInt(requestedWaitTime);
+  }
 
   const ctx = canvas.getContext("2d");
-  const loopyFruits = renderRickRoll(ctx, canvas.width, canvas.height);
+  const loopyFruits = isRunningAnimFrameDemo ? render3DCube(ctx, canvas.width, canvas.height) : renderRickRoll(ctx, canvas.width, canvas.height);
 
   const windows = [];
 
@@ -83,12 +99,14 @@ async function init() {
   x = 0;
   y = 0;
 
-  loopyFruits.play();
+  if (!isRunningAnimFrameDemo) loopyFruits.play();
 
   while (true) {
     const chunks = splitCanvasRev2(canvas, sizeFactor, sizeFactor);
     x = 0;
     y = 0;
+    
+    if (isRunningAnimFrameDemo) requestAnimationFrame(loopyFruits.loop);
 
     let activeIter = -1;
 
@@ -106,12 +124,12 @@ async function init() {
       activeIter++;
 
       const activeWindow = windows.find((i) => i.x == x && i.y == y);
-
       activeWindow.win.postMessage(exportCanvasAsImage(chunks[activeIter].chunk));
-      await new Promise((i) => setTimeout(i, 1));
+
+      if (intervalRenderBusyTime) await new Promise((i) => setTimeout(i, intervalRenderBusyTime));
     }
 
-    await new Promise((i) => setTimeout(i, 10));
+    await new Promise((i) => setTimeout(i, waitTimeUntilNextFrame));
   }
 }
 
